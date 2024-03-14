@@ -3,9 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 )
 
 type DifficultyLevel int
@@ -25,7 +23,7 @@ const (
 )
 
 type Tour struct {
-	ID                  uuid.UUID            `json:"id"`
+	ID                  int                  `json:"id"`
 	Name                string               `json:"name"`
 	DifficultyLevel     DifficultyLevel      `json:"difficultyLevel"`
 	Description         string               `json:"description"`
@@ -38,9 +36,4 @@ type Tour struct {
 	TourPoints          []TourPoint          `json:"tourPoints"`
 	TourCharacteristics []TourCharacteristic `gorm:"type:TourCharacteristic[]"`
 	TourReviews         []TourReview         `json:"tourReviews"`
-}
-
-func (tour *Tour) BeforeCreate(scope *gorm.DB) error {
-	tour.ID = uuid.New()
-	return nil
 }
