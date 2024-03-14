@@ -21,7 +21,8 @@ func initDB() *gorm.DB {
 		print(err)
 		return nil
 	}
-	database.AutoMigrate(&model.Tour{})
+	database.AutoMigrate(&model.Tour{}, &model.TourPoint{}, &model.TourReview{})
+
 	return database
 }
 
