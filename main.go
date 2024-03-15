@@ -26,11 +26,12 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer(tourHandler *handler.TourHandler) {
+func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
 	router.HandleFunc("/toursByGuideId/{userId}", tourHandler.GetToursByGuideID).Methods("GET")
+	router.HandleFunc("/tourPoint", tourPointHandler.CreateTourPoint).Methods("POST")
 
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
@@ -46,5 +47,9 @@ func main() {
 	tourService := &service.TourService{TourRepo: tourRepo}
 	tourHandler := &handler.TourHandler{TourService: tourService}
 
-	startServer(tourHandler)
+	tourPointRepo := &repo.TourPointRepository{DatabaseConnection: database}
+	tourPointService := &service.TourPointService{TourPointRepo: tourPointRepo}
+	tourPointHandler := &handler.TourPointHandler{TourPointService: tourPointService}
+
+	startServer(tourHandler, tourPointHandler)
 }
