@@ -33,7 +33,7 @@ type Tour struct {
 	UserId              int                  `json:"userId"`
 	PublishedDateTime   *time.Time           `json:"publishedDateTime,omitempty"`
 	ArchivedDateTime    *time.Time           `json:"archivedDateTime,omitempty"`
-	TourPoints          []TourPoint          `json:"tourPoints"`
-	TourCharacteristics []TourCharacteristic `gorm:"type:TourCharacteristic[]"`
-	TourReviews         []TourReview         `json:"tourReviews"`
+	TourPoints          []TourPoint          `json:"tourPoints" gorm:"foreignKey:TourID"`
+	TourCharacteristics []TourCharacteristic `json:"tourCharacteristic" gorm:"type:json"`
+	TourReviews         []TourReview         `json:"tourReviews" gorm:"foreignKey:TourID"`
 }
