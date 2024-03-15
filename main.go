@@ -30,6 +30,7 @@ func startServer(tourHandler *handler.TourHandler) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
+	router.HandleFunc("/toursByGuideId/{userId}", tourHandler.GetToursByGuideID).Methods("GET")
 
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))

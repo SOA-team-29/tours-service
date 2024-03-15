@@ -6,8 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"tours/model"
 	"tours/service"
+
+	"github.com/gorilla/mux"
 )
 
 type TourHandler struct {
@@ -110,5 +113,101 @@ func convertStatusToNumber(status string) int {
 		return 2
 	default:
 		return -1
+	}
+}
+
+func (h *TourHandler) GetToursByGuideID(w http.ResponseWriter, r *http.Request) {
+	// Ispisivanje podataka o zahtevu koji dolazi
+	log.Println("Received request to get tours by guide ID")
+
+	// Čitanje ID vodiča iz URL parametra
+	params := mux.Vars(r)
+	guideIDStr, ok := params["userId"]
+	if !ok {
+		log.Println("Guide ID not provided")
+		http.Error(w, "Guide ID not provided", http.StatusBadRequest)
+		return
+	}
+	guideID, err := strconv.Atoi(guideIDStr)
+	if err != nil {
+		log.Println("Invalid guide ID:", err)
+		http.Error(w, "Invalid guide ID", http.StatusBadRequest)
+		return
+	}
+
+	// Čitanje stranice i veličine stranice iz URL upita (query parameters)
+	pageStr := r.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		page = 1 // Ako nije navedena stranica, podrazumevano je prva stranica
+	}
+
+	pageSizeStr := r.URL.Query().Get("pageSize")
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		pageSize = 10 // Ako nije navedena veličina stranice, podrazumevano je 10
+	}
+
+	// Pozivanje odgovarajuće funkcije u servisu za dobijanje tura po ID-u vodiča
+	tours, err := h.TourService.GetToursByGuideID(guideID, page, pageSize)
+	if err != nil {
+		log.Println("Error getting tours by guide ID:", err)
+		http.Error(w, "Failed to get tours by guide ID", http.StatusInternalServerError)
+		return
+	}
+
+	//Moja provera da li je nasao dobro iz baze
+	log.Println("Tours:", tours)
+
+	modifiedTours := make([]map[string]interface{}, len(tours))
+	for i, tour := range tours {
+		modifiedTour := map[string]interface{}{
+			"id":                  tour.ID,
+			"name":                tour.Name,
+			"difficultyLevel":     convertDifficultyToString(int(tour.DifficultyLevel)),
+			"description":         tour.Description,
+			"tags":                tour.Tags,
+			"status":              convertStatusToString(int(tour.Status)),
+			"price":               tour.Price,
+			"userId":              tour.UserId,
+			"publishedDateTime":   tour.PublishedDateTime,
+			"archivedDateTime":    tour.ArchivedDateTime,
+			"tourPoints":          tour.TourPoints,
+			"tourCharacteristics": tour.TourCharacteristics,
+			"tourReviews":         tour.TourReviews,
+		}
+		modifiedTours[i] = modifiedTour
+	}
+
+	// Slanje odgovora sa tura podacima kao JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(modifiedTours)
+}
+
+// Funkcija za konverziju difficultyLevel u string
+func convertDifficultyToString(difficulty int) string {
+	switch difficulty {
+	case 0:
+		return "Easy"
+	case 1:
+		return "Moderate"
+	case 2:
+		return "Difficult"
+	default:
+		return ""
+	}
+}
+
+// Funkcija za konverziju statusa u string
+func convertStatusToString(status int) string {
+	switch status {
+	case 0:
+		return "Draft"
+	case 1:
+		return "Published"
+	case 2:
+		return "Archived"
+	default:
+		return ""
 	}
 }
