@@ -25,3 +25,19 @@ func (service *TourService) GetToursByGuideID(guideID int, page, pageSize int) (
 	}
 	return tours, nil
 }
+
+func (service *TourService) GetTourByID(ID int) (model.Tour, error) {
+	tour, err := service.TourRepo.GetTourByID(ID)
+	if err != nil {
+		return model.Tour{}, err
+	}
+	return tour, nil
+}
+
+func (service *TourService) GetAllTours(page, pageSize int) ([]model.Tour, error) {
+	tours, err := service.TourRepo.GetAllTours(page, pageSize)
+	if err != nil {
+		return nil, err
+	}
+	return tours, nil
+}

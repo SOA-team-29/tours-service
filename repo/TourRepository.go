@@ -26,3 +26,20 @@ func (tourRepo *TourRepository) GetToursByGuideID(guideID int, page, pageSize in
 	}
 	return tours, nil
 }
+
+func (tourRepo *TourRepository) GetTourByID(ID int) (model.Tour, error) {
+	var tour model.Tour
+	if err := tourRepo.DatabaseConnection.Where("id = ?", ID).First(&tour).Error; err != nil {
+		return model.Tour{}, err
+	}
+	return tour, nil
+}
+
+func (tourRepo *TourRepository) GetAllTours(page, pageSize int) ([]model.Tour, error) {
+	var tours []model.Tour
+
+	if err := tourRepo.DatabaseConnection.Find(&tours).Error; err != nil {
+		return nil, err
+	}
+	return tours, nil
+}

@@ -184,6 +184,100 @@ func (h *TourHandler) GetToursByGuideID(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(modifiedTours)
 }
 
+func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+	IDStr, ok := params["id"]
+	if !ok {
+		log.Println("ID not provided")
+		http.Error(w, "ID not provided", http.StatusBadRequest)
+		return
+	}
+	ID, err := strconv.Atoi(IDStr)
+	if err != nil {
+		log.Println("Invalid tour ID:", err)
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	tour, err := h.TourService.GetTourByID(ID)
+	if err != nil {
+		log.Println("Error getting tour by ID:", err)
+		http.Error(w, "Failed to get tour by ID", http.StatusInternalServerError)
+		return
+	}
+
+	//Moja provera da li je nasao dobro iz baze
+	log.Println("Tour:", tour)
+
+	modifiedTour := map[string]interface{}{
+		"id":                  tour.ID,
+		"name":                tour.Name,
+		"difficultyLevel":     convertDifficultyToString(int(tour.DifficultyLevel)),
+		"description":         tour.Description,
+		"tags":                tour.Tags,
+		"status":              convertStatusToString(int(tour.Status)),
+		"price":               tour.Price,
+		"userId":              tour.UserId,
+		"publishedDateTime":   tour.PublishedDateTime,
+		"archivedDateTime":    tour.ArchivedDateTime,
+		"tourPoints":          tour.TourPoints,
+		"tourCharacteristics": tour.TourCharacteristics,
+		"tourReviews":         tour.TourReviews,
+	}
+
+	// Slanje odgovora sa tura podacima kao JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(modifiedTour)
+}
+
+func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
+
+	pageStr := r.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		page = 1
+	}
+
+	pageSizeStr := r.URL.Query().Get("pageSize")
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		pageSize = 10
+	}
+
+	tours, err := h.TourService.GetAllTours(page, pageSize)
+	if err != nil {
+		log.Println("Error getting tours :", err)
+		http.Error(w, "Failed to get tours", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Tours:", tours)
+
+	modifiedTours := make([]map[string]interface{}, len(tours))
+	for i, tour := range tours {
+		modifiedTour := map[string]interface{}{
+			"id":                  tour.ID,
+			"name":                tour.Name,
+			"difficultyLevel":     convertDifficultyToString(int(tour.DifficultyLevel)),
+			"description":         tour.Description,
+			"tags":                tour.Tags,
+			"status":              convertStatusToString(int(tour.Status)),
+			"price":               tour.Price,
+			"userId":              tour.UserId,
+			"publishedDateTime":   tour.PublishedDateTime,
+			"archivedDateTime":    tour.ArchivedDateTime,
+			"tourPoints":          tour.TourPoints,
+			"tourCharacteristics": tour.TourCharacteristics,
+			"tourReviews":         tour.TourReviews,
+		}
+		modifiedTours[i] = modifiedTour
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(modifiedTours)
+}
+
 // Funkcija za konverziju difficultyLevel u string
 func convertDifficultyToString(difficulty int) string {
 	switch difficulty {
