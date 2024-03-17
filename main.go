@@ -33,9 +33,10 @@ func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.Tou
 	router.HandleFunc("/tours/all", tourHandler.GetAllTours).Methods("GET")
 	router.HandleFunc("/tours/{id}", tourHandler.GetTourByID).Methods("GET")
 	router.HandleFunc("/toursByGuideId/{userId}", tourHandler.GetToursByGuideID).Methods("GET")
+	router.HandleFunc("/tours/publish/{tourId}", tourHandler.PublishTour).Methods("PUT")
+	router.HandleFunc("/tours/archive/{id}", tourHandler.ArchiveTour).Methods("PUT")
 	router.HandleFunc("/tourPoint", tourPointHandler.CreateTourPoint).Methods("POST")
 	router.HandleFunc("/tourPoint/allPointsInTour/{tourId}", tourPointHandler.GetAllPointsByTour).Methods("GET")
-
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }

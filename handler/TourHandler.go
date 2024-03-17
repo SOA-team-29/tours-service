@@ -278,6 +278,64 @@ func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(modifiedTours)
 }
 
+func (h *TourHandler) PublishTour(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Uspesno primljen zahtev za publish")
+
+	params := mux.Vars(r)
+	IDStr, ok := params["tourId"]
+	if !ok {
+		log.Println("Tour ID not provided")
+		http.Error(w, "Tour ID not provided", http.StatusBadRequest)
+		return
+	}
+	tourID, err := strconv.Atoi(IDStr)
+	if err != nil {
+		log.Println("Invalid tour ID:", err)
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.TourService.PublishTour(tourID)
+	if err != nil {
+		log.Println("Error publishing tour:", err)
+		http.Error(w, "Failed to publish tour", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Tour successfully published"))
+}
+
+func (h *TourHandler) ArchiveTour(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Uspesno primljen zahtev za archive")
+
+	params := mux.Vars(r)
+	IDStr, ok := params["id"]
+	if !ok {
+		log.Println("Tour ID not provided")
+		http.Error(w, "Tour ID not provided", http.StatusBadRequest)
+		return
+	}
+	tourID, err := strconv.Atoi(IDStr)
+	if err != nil {
+		log.Println("Invalid tour ID:", err)
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.TourService.ArchiveTour(tourID)
+	if err != nil {
+		log.Println("Error :", err)
+		http.Error(w, "Failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Tour successfully archived"))
+}
+
 // Funkcija za konverziju difficultyLevel u string
 func convertDifficultyToString(difficulty int) string {
 	switch difficulty {

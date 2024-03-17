@@ -43,3 +43,33 @@ func (tourRepo *TourRepository) GetAllTours(page, pageSize int) ([]model.Tour, e
 	}
 	return tours, nil
 }
+
+func (tourRepo *TourRepository) PublishTour(tourID int) error {
+	var tour model.Tour
+	if err := tourRepo.DatabaseConnection.First(&tour, tourID).Error; err != nil {
+		return err
+	}
+
+	tour.Status = model.Published
+
+	if err := tourRepo.DatabaseConnection.Save(&tour).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (tourRepo *TourRepository) ArchiveTour(tourID int) error {
+	var tour model.Tour
+	if err := tourRepo.DatabaseConnection.First(&tour, tourID).Error; err != nil {
+		return err
+	}
+
+	tour.Status = model.Archived
+
+	if err := tourRepo.DatabaseConnection.Save(&tour).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

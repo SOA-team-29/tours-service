@@ -41,3 +41,19 @@ func (service *TourService) GetAllTours(page, pageSize int) ([]model.Tour, error
 	}
 	return tours, nil
 }
+
+func (service *TourService) PublishTour(tourID int) error {
+	err := service.TourRepo.PublishTour(tourID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service *TourService) ArchiveTour(tourID int) error {
+	err := service.TourRepo.ArchiveTour(tourID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
