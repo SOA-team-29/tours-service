@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"errors"
+	"time"
 	"tours/model"
 
 	"gorm.io/gorm"
@@ -49,6 +51,22 @@ func (tourRepo *TourRepository) PublishTour(tourID int) error {
 	if err := tourRepo.DatabaseConnection.First(&tour, tourID).Error; err != nil {
 		return err
 	}
+	/*
+		if len(points) < 2 {
+			return errors.New("tour must have at least two tour points to publish")
+		}*/
+	if tour.Name == "" {
+		return errors.New("tour name cannot be empty")
+	}
+	if tour.Description == "" {
+		return errors.New("tour description cannot be empty")
+	}
+	if len(tour.Tags) == 0 {
+		return errors.New("tour must have at least one tag")
+	}
+
+	now := time.Now()
+	tour.PublishedDateTime = &now
 
 	tour.Status = model.Published
 
@@ -64,6 +82,8 @@ func (tourRepo *TourRepository) ArchiveTour(tourID int) error {
 	if err := tourRepo.DatabaseConnection.First(&tour, tourID).Error; err != nil {
 		return err
 	}
+	now := time.Now()
+	tour.ArchivedDateTime = &now
 
 	tour.Status = model.Archived
 

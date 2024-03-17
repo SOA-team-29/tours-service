@@ -43,6 +43,7 @@ func (service *TourService) GetAllTours(page, pageSize int) ([]model.Tour, error
 }
 
 func (service *TourService) PublishTour(tourID int) error {
+
 	err := service.TourRepo.PublishTour(tourID)
 	if err != nil {
 		return err

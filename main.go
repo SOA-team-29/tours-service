@@ -30,7 +30,7 @@ func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.Tou
 	router := mux.NewRouter()
 
 	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
-	router.HandleFunc("/tours/all", tourHandler.GetAllTours).Methods("GET")
+	router.HandleFunc("/tours/see/all", tourHandler.GetAllTours).Methods("GET")
 	router.HandleFunc("/tours/{id}", tourHandler.GetTourByID).Methods("GET")
 	router.HandleFunc("/toursByGuideId/{userId}", tourHandler.GetToursByGuideID).Methods("GET")
 	router.HandleFunc("/tours/publish/{tourId}", tourHandler.PublishTour).Methods("PUT")
