@@ -6,6 +6,7 @@ import (
 	"github.com/lib/pq"
 )
 
+type TourPCharacteristics []TourCharacteristic
 type DifficultyLevel int
 
 const (
@@ -34,6 +35,6 @@ type Tour struct {
 	PublishedDateTime   *time.Time           `json:"publishedDateTime,omitempty"`
 	ArchivedDateTime    *time.Time           `json:"archivedDateTime,omitempty"`
 	TourPoints          []TourPoint          `json:"tourPoints" gorm:"foreignKey:TourID"`
-	TourCharacteristics []TourCharacteristic `json:"tourCharacteristic" gorm:"type:json"`
+	TourCharacteristics TourPCharacteristics `json:"tourCharacteristics" gorm:"type:jsonb"`
 	TourReviews         []TourReview         `json:"tourReviews" gorm:"foreignKey:TourID"`
 }

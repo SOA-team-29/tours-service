@@ -58,7 +58,7 @@ func (h *TourPointHandler) GetAllPointsByTour(w http.ResponseWriter, r *http.Req
 		return
 	}
 	log.Println("Points:", points)
-	// Slanje odgovora sa tura podacima kao JSON
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(points)
 }

@@ -158,9 +158,8 @@ func (h *TourHandler) GetToursByGuideID(w http.ResponseWriter, r *http.Request) 
 
 	//Moja provera da li je nasao dobro iz baze
 	log.Println("Tours:", tours)
-
-	modifiedTours := make([]map[string]interface{}, len(tours))
-	for i, tour := range tours {
+	modifiedTours := make([]map[string]interface{}, len(*tours))
+	for i, tour := range *tours {
 		modifiedTour := map[string]interface{}{
 			"id":                  tour.ID,
 			"name":                tour.Name,
@@ -176,12 +175,24 @@ func (h *TourHandler) GetToursByGuideID(w http.ResponseWriter, r *http.Request) 
 			"tourCharacteristics": tour.TourCharacteristics,
 			"tourReviews":         tour.TourReviews,
 		}
+
+		// Konvertujte TransportType u string u modifikovanom tura objektu
+		characteristics := make([]map[string]interface{}, len(tour.TourCharacteristics))
+		for j, characteristic := range tour.TourCharacteristics {
+			characteristics[j] = map[string]interface{}{
+				"distance":      characteristic.Distance,
+				"duration":      characteristic.Duration,
+				"transportType": convertTransportTypeToString(characteristic.TransportType),
+			}
+		}
+		modifiedTour["tourCharacteristics"] = characteristics
+
 		modifiedTours[i] = modifiedTour
 	}
-
 	// Slanje odgovora sa tura podacima kao JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(modifiedTours)
+
 }
 
 func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
@@ -225,6 +236,15 @@ func (h *TourHandler) GetTourByID(w http.ResponseWriter, r *http.Request) {
 		"tourCharacteristics": tour.TourCharacteristics,
 		"tourReviews":         tour.TourReviews,
 	}
+	characteristics := make([]map[string]interface{}, len(tour.TourCharacteristics))
+	for j, characteristic := range tour.TourCharacteristics {
+		characteristics[j] = map[string]interface{}{
+			"distance":      characteristic.Distance,
+			"duration":      characteristic.Duration,
+			"transportType": convertTransportTypeToString(characteristic.TransportType),
+		}
+	}
+	modifiedTour["tourCharacteristics"] = characteristics
 
 	// Slanje odgovora sa tura podacima kao JSON
 	w.Header().Set("Content-Type", "application/json")
@@ -253,9 +273,8 @@ func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Tours:", tours)
-
-	modifiedTours := make([]map[string]interface{}, len(tours))
-	for i, tour := range tours {
+	modifiedTours := make([]map[string]interface{}, len(*tours))
+	for i, tour := range *tours {
 		modifiedTour := map[string]interface{}{
 			"id":                  tour.ID,
 			"name":                tour.Name,
@@ -271,9 +290,20 @@ func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
 			"tourCharacteristics": tour.TourCharacteristics,
 			"tourReviews":         tour.TourReviews,
 		}
+
+		// Konvertujte TransportType u string u modifikovanom tura objektu
+		characteristics := make([]map[string]interface{}, len(tour.TourCharacteristics))
+		for j, characteristic := range tour.TourCharacteristics {
+			characteristics[j] = map[string]interface{}{
+				"distance":      characteristic.Distance,
+				"duration":      characteristic.Duration,
+				"transportType": convertTransportTypeToString(characteristic.TransportType),
+			}
+		}
+		modifiedTour["tourCharacteristics"] = characteristics
+
 		modifiedTours[i] = modifiedTour
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(modifiedTours)
 }
@@ -334,6 +364,115 @@ func (h *TourHandler) ArchiveTour(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Tour successfully archived"))
+}
+
+func (h *TourHandler) SetTourCharacteristic(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Received request to set tour characteristics")
+
+	params := mux.Vars(r)
+	tourIDStr, ok := params["tourId"]
+	if !ok {
+		log.Println("Tour ID not provided")
+		http.Error(w, "Tour ID not provided", http.StatusBadRequest)
+		return
+	}
+	tourID, err := strconv.Atoi(tourIDStr)
+	if err != nil {
+		log.Println("Invalid tour ID:", err)
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
+	// Čitanje JSON podataka iz tela zahteva
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println("Error reading request body:", err)
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	// Ispisivanje JSON podataka pre dekodiranja
+	log.Println("Received JSON data:", string(body))
+
+	// Modifikacija polja transport pre dekodiranja
+	modifiedBody := modifyJSONForCharacteristic(body)
+
+	var tourCharacteristic []model.TourCharacteristic
+	decoder := json.NewDecoder(bytes.NewReader(modifiedBody))
+
+	err = decoder.Decode(&tourCharacteristic)
+	if err != nil {
+		log.Println("Error decoding JSON:", err)
+		http.Error(w, "Failed to decode JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.TourService.SetTourCharacteristics(tourID, tourCharacteristic)
+	if err != nil {
+		log.Println("Error setting tour characteristics:", err)
+		http.Error(w, "Failed to set tour characteristics", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Tour characteristics successfully set"))
+}
+
+func modifyJSONForCharacteristic(data []byte) []byte {
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		log.Println("Error decoding JSON:", err)
+		return data
+	}
+
+	if transport, ok := jsonData["transportType"].(string); ok {
+		jsonData["transportType"] = convertTransportToNumber(transport)
+	}
+
+	// Pretvaranje modifikovanog objekta u niz objekata
+	tourCharacteristics := make([]model.TourCharacteristic, 1)
+	tourCharacteristics[0] = model.TourCharacteristic{
+		Distance:      jsonData["Distance"].(float64),
+		Duration:      jsonData["Duration"].(float64),
+		TransportType: model.TransportType(convertTransportToNumber(jsonData["TransportType"].(string))),
+	}
+
+	// Konverzija nazad u JSON
+	modifiedBody, err := json.Marshal(tourCharacteristics)
+	if err != nil {
+		log.Println("Error encoding modified JSON:", err)
+		return data
+	}
+
+	return modifiedBody
+}
+
+func convertTransportToNumber(transport string) int {
+	switch transport {
+	case "walking":
+		return 0
+	case "biking":
+		return 1
+	case "driving":
+		return 2
+	default:
+		return -1
+	}
+}
+
+func convertTransportTypeToString(transportType model.TransportType) string {
+	switch transportType {
+	case model.Walking:
+		return "walking"
+	case model.Biking:
+		return "biking"
+	case model.Driving:
+		return "driving"
+	default:
+		return ""
+	}
 }
 
 // Funkcija za konverziju difficultyLevel u string
