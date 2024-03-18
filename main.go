@@ -1,40 +1,45 @@
 package main
 
 import (
-	"database-example/handler"
-	"database-example/model"
-	"database-example/repo"
-	"database-example/service"
 	"log"
 	"net/http"
+	"tours/handler"
+	"tours/model"
+	"tours/repo"
+	"tours/service"
 
 	"github.com/gorilla/mux"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func initDB() *gorm.DB {
-	connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
-	database, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
+	connection_url := "user=postgres password=super dbname=SOA port=5432 sslmode=disable"
+	database, err := gorm.Open(postgres.Open(connection_url), &gorm.Config{})
+
 	if err != nil {
 		print(err)
 		return nil
 	}
+	database.AutoMigrate(&model.Tour{}, &model.TourPoint{}, &model.TourReview{})
 
-	database.AutoMigrate(&model.Student{})
-	database.Exec("INSERT IGNORE INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
 	return database
 }
 
-func startServer(handler *handler.StudentHandler) {
-	router := mux.NewRouter().StrictSlash(true)
+func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler) {
+	router := mux.NewRouter()
 
-	router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/students", handler.Create).Methods("POST")
-
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
+	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
+	router.HandleFunc("/tours/see/all", tourHandler.GetAllTours).Methods("GET")
+	router.HandleFunc("/tours/{id}", tourHandler.GetTourByID).Methods("GET")
+	router.HandleFunc("/toursByGuideId/{userId}", tourHandler.GetToursByGuideID).Methods("GET")
+	router.HandleFunc("/tours/publish/{tourId}", tourHandler.PublishTour).Methods("PUT")
+	router.HandleFunc("/tours/archive/{id}", tourHandler.ArchiveTour).Methods("PUT")
+	router.HandleFunc("/tours/characteristics/{tourId}", tourHandler.SetTourCharacteristic).Methods("PUT")
+	router.HandleFunc("/tourPoint", tourPointHandler.CreateTourPoint).Methods("POST")
+	router.HandleFunc("/tourPoint/allPointsInTour/{tourId}", tourPointHandler.GetAllPointsByTour).Methods("GET")
 	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8081", router))
 }
 
 func main() {
@@ -43,9 +48,13 @@ func main() {
 		print("FAILED TO CONNECT TO DB")
 		return
 	}
-	repo := &repo.StudentRepository{DatabaseConnection: database}
-	service := &service.StudentService{StudentRepo: repo}
-	handler := &handler.StudentHandler{StudentService: service}
+	tourRepo := &repo.TourRepository{DatabaseConnection: database}
+	tourService := &service.TourService{TourRepo: tourRepo}
+	tourHandler := &handler.TourHandler{TourService: tourService}
 
-	startServer(handler)
+	tourPointRepo := &repo.TourPointRepository{DatabaseConnection: database}
+	tourPointService := &service.TourPointService{TourPointRepo: tourPointRepo}
+	tourPointHandler := &handler.TourPointHandler{TourPointService: tourPointService}
+
+	startServer(tourHandler, tourPointHandler)
 }
