@@ -26,8 +26,8 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler) {
-	router := mux.NewRouter()
+func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler, tourReviewHandler *handler.TourReviewHandler) {
+	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
 	router.HandleFunc("/tours/see/all", tourHandler.GetAllTours).Methods("GET")
@@ -38,6 +38,9 @@ func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.Tou
 	router.HandleFunc("/tours/characteristics/{tourId}", tourHandler.SetTourCharacteristic).Methods("PUT")
 	router.HandleFunc("/tourPoint", tourPointHandler.CreateTourPoint).Methods("POST")
 	router.HandleFunc("/tourPoint/allPointsInTour/{tourId}", tourPointHandler.GetAllPointsByTour).Methods("GET")
+	router.HandleFunc("/tourReviews/create", tourReviewHandler.CreateTourReview).Methods("POST")
+	router.HandleFunc("/tourReviews/see", tourReviewHandler.GetAll).Methods("GET")
+
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
@@ -56,5 +59,9 @@ func main() {
 	tourPointService := &service.TourPointService{TourPointRepo: tourPointRepo}
 	tourPointHandler := &handler.TourPointHandler{TourPointService: tourPointService}
 
-	startServer(tourHandler, tourPointHandler)
+	tourReviewRepo := &repo.TourReviewRepository{DatabaseConnection: database}
+	tourReviewService := &service.TourReviewService{TourReviewRepo: tourReviewRepo}
+	tourReviewHandler := &handler.TourReviewHandler{TourReviewService: tourReviewService}
+
+	startServer(tourHandler, tourPointHandler, tourReviewHandler)
 }

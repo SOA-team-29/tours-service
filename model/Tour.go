@@ -36,5 +36,5 @@ type Tour struct {
 	ArchivedDateTime    *time.Time           `json:"archivedDateTime,omitempty"`
 	TourPoints          []TourPoint          `json:"tourPoints" gorm:"foreignKey:TourID"`
 	TourCharacteristics TourPCharacteristics `json:"tourCharacteristics" gorm:"type:jsonb"`
-	TourReviews         []TourReview         `json:"tourReviews" gorm:"foreignKey:TourID"`
+	TourReviews         []TourReview         `json:"tourReviews"`
 }
