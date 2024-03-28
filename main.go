@@ -21,12 +21,13 @@ func initDB() *gorm.DB {
 		print(err)
 		return nil
 	}
-	database.AutoMigrate(&model.Tour{}, &model.TourPoint{}, &model.TourReview{})
+	database.AutoMigrate(&model.Tour{}, &model.TourPoint{}, &model.TourReview{}, &model.Equipment{}, &model.TouristEquipment{})
 
 	return database
 }
 
-func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler, tourReviewHandler *handler.TourReviewHandler) {
+func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.TourPointHandler, tourReviewHandler *handler.TourReviewHandler,
+	equipmentHandler *handler.EquipmentHandler, touristEquipmentHandler *handler.TouristEquipmentHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
@@ -40,6 +41,14 @@ func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.Tou
 	router.HandleFunc("/tourPoint/allPointsInTour/{tourId}", tourPointHandler.GetAllPointsByTour).Methods("GET")
 	router.HandleFunc("/tourReviews/create", tourReviewHandler.CreateTourReview).Methods("POST")
 	router.HandleFunc("/tourReviews/see", tourReviewHandler.GetAll).Methods("GET")
+	router.HandleFunc("/equipment/getOtherEquipment", equipmentHandler.GetOtherEquipment).Methods("GET")
+	router.HandleFunc("/equipment/getAll", equipmentHandler.GetAll).Methods("GET")
+	router.HandleFunc("/equipment/tourist/getEquipment/", equipmentHandler.GetTouristEquipment).Methods("GET")
+
+	router.HandleFunc("/getTouristEquipment/{touristId}", touristEquipmentHandler.GetTouristEquipment).Methods("GET")
+	router.HandleFunc("/touristEquipment/createTouristEquipment/{id}", touristEquipmentHandler.CreateTouristEquipment).Methods("POST")
+	router.HandleFunc("/touristEquipment/addToMyEquipment/{touristId}/{equipmentId}", touristEquipmentHandler.AddToMyEquipment).Methods("PUT")
+	router.HandleFunc("/touristEquipment/deleteFromMyEquipment/{touristId}/{equipmentId}", touristEquipmentHandler.DeleteFromMyEquipment).Methods("PUT")
 
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
@@ -63,5 +72,13 @@ func main() {
 	tourReviewService := &service.TourReviewService{TourReviewRepo: tourReviewRepo}
 	tourReviewHandler := &handler.TourReviewHandler{TourReviewService: tourReviewService}
 
-	startServer(tourHandler, tourPointHandler, tourReviewHandler)
+	equipmentRepo := &repo.EquipmentRepository{DatabaseConnection: database}
+	equipmentService := &service.EquipmentService{EquipmentRepo: equipmentRepo}
+	equipmentHandler := &handler.EquipmentHandler{EquipmentService: equipmentService}
+
+	touristEquipmentRepo := &repo.TouristEquipmentRepository{DatabaseConnection: database}
+	touristEquipmentService := &service.TouristEquipmentService{TouristEquipmentRepo: touristEquipmentRepo}
+	touristEquipmentHandler := &handler.TouristEquipmentHandler{TouristEquipmentService: touristEquipmentService}
+
+	startServer(tourHandler, tourPointHandler, tourReviewHandler, equipmentHandler, touristEquipmentHandler)
 }
