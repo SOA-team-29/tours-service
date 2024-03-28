@@ -1,0 +1,39 @@
+/*version: '3.7'
+
+services:
+  tours:
+    build:
+      dockerfile: Dockerfile
+      context: ./
+    image: tours-web-server
+    container_name: tours-container
+    restart: always
+    networks:
+      - servers
+    ports:
+      - "8081:8081"
+    depends_on:
+      - database
+
+  database:
+    image: postgres:13
+    restart: always
+    networks:
+      - servers
+    environment:
+      POSTGRES_PASSWORD: super
+      POSTGRES_USER: postgres
+      POSTGRES_DB: SOA
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  database-data:
+    name: SOA-database-data
+
+networks:
+  servers:
+    name: servers
+    driver: bridge
