@@ -29,6 +29,20 @@ services:
     depends_on:
       - database
 
+  blogs:
+    build:
+      dockerfile: Dockerfile
+      context: ./blog-service/
+    image: blogs-web-server
+    container_name: blogs-container
+    restart: always
+    networks:
+      - servers
+    ports:
+      - "8082:8082"
+    depends_on:
+      - database
+
   database:
     image: postgres:13
     restart: always
