@@ -4,7 +4,7 @@ services:
   tours:
     build:
       dockerfile: Dockerfile
-      context: ./
+      context: ./tours-service/
     image: tours-web-server
     container_name: tours-container
     restart: always
@@ -12,6 +12,20 @@ services:
       - servers
     ports:
       - "8081:8081"
+    depends_on:
+      - database
+
+  stakeholders:
+    build:
+      dockerfile: Dockerfile
+      context: ./stakeholders-service/
+    image: stakeholders-web-server
+    container_name: stakeholders-container
+    restart: always
+    networks:
+      - servers
+    ports:
+      - "8083:8083"
     depends_on:
       - database
 
