@@ -29,6 +29,22 @@ services:
     depends_on:
       - database
 
+  encounters:
+    build:
+      dockerfile: Dockerfile
+      context: ./encounters-service/
+    image: encounters-web-server
+    container_name: encounters-container
+    restart: always
+    networks:
+      - servers
+    ports:
+      - "4000:4000"
+    depends_on:
+      - database
+
+
+
   blogs:
     build:
       dockerfile: Dockerfile
