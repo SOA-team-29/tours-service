@@ -14,7 +14,7 @@ import (
 )
 
 func initDB() *gorm.DB {
-	connectionURL := "user=postgres password=super dbname=SOA host=database port=5432 sslmode=disable"
+	connectionURL := "user=postgres password=super dbname=SOA host=database1 port=5432 sslmode=disable"
 	database, err := gorm.Open(postgres.Open(connectionURL), &gorm.Config{})
 
 	if err != nil {
