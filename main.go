@@ -9,9 +9,35 @@ import (
 	"tours/service"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+const serviceName = "tours-service"
+
+var (
+	requestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+		[]string{"method", "endpoint"},
+	)
+	requestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "http_request_duration_seconds",
+			Help: "Histogram of response latency (seconds) of HTTP requests.",
+		},
+		[]string{"method", "endpoint"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestsTotal, requestDuration)
+}
 
 func initDB() *gorm.DB {
 	connectionURL := "user=postgres password=super dbname=SOA host=database1 port=5432 sslmode=disable"
@@ -50,8 +76,23 @@ func startServer(tourHandler *handler.TourHandler, tourPointHandler *handler.Tou
 	router.HandleFunc("/touristEquipment/addToMyEquipment/{touristId}/{equipmentId}", touristEquipmentHandler.AddToMyEquipment).Methods("PUT")
 	router.HandleFunc("/touristEquipment/deleteFromMyEquipment/{touristId}/{equipmentId}", touristEquipmentHandler.DeleteFromMyEquipment).Methods("PUT")
 
+	router.Handle("/metrics", promhttp.Handler())
+
 	println("Server starting")
 	log.Fatal(http.ListenAndServe(":8081", router))
+}
+func instrumentHandler(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		endpoint := r.URL.Path
+		method := r.Method
+
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(method, endpoint))
+		defer timer.ObserveDuration()
+
+		requestsTotal.WithLabelValues(method, endpoint).Inc()
+
+		next.ServeHTTP(w, r)
+	}
 }
 
 func main() {
@@ -59,6 +100,7 @@ func main() {
 	if database == nil {
 		print("FAILED TO CONNECT TO DB")
 		return
+
 	}
 	tourRepo := &repo.TourRepository{DatabaseConnection: database}
 	tourService := &service.TourService{TourRepo: tourRepo}
