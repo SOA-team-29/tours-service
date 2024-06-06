@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const serviceName = "tours-service"
+const serviceName = "tours"
 
 var (
 	requestsTotal = prometheus.NewCounterVec(
